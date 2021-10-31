@@ -19,6 +19,7 @@ const ErrorMsg = Module.ErrorMsg;
 const FnResult = @import("../../codegen.zig").FnResult;
 const GenerateSymbolError = @import("../../codegen.zig").GenerateSymbolError;
 const Liveness = @import("../../Liveness.zig");
+const Mir = @import("Mir.zig");
 const Module = @import("../../Module.zig");
 const RegisterManager = @import("../../register_manager.zig").RegisterManager;
 const Target = std.Target;
@@ -48,6 +49,11 @@ fn_type: Type,
 arg_index: usize,
 src_loc: Module.SrcLoc,
 stack_align: u32,
+
+/// MIR Instructions
+mir_instructions: std.MultiArrayList(Mir.Inst) = .{},
+/// MIR extra data
+mir_extra: std.ArrayListUnmanaged(u32) = .{},
 
 prev_di_line: u32,
 prev_di_column: u32,
@@ -305,6 +311,12 @@ pub fn generate(
         error.CodegenFail => return FnResult{ .fail = function.err_msg.? },
         else => |e| return e,
     };
+
+    var mir = Mir{
+        .instructions = function.mir_instructions.toOwnedSlice(),
+        .extra = function.mir_extra.toOwnedSlice(bin_file.allocator),
+    };
+    defer mir.deinit(bin_file.allocator);
 
     if (function.err_msg) |em| {
         return FnResult{ .fail = em };
