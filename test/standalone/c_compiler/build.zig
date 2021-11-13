@@ -39,7 +39,10 @@ pub fn build(b: *Builder) void {
     exe_cpp.setTarget(target);
     exe_cpp.linkLibCpp();
     exe_cpp.single_threaded = isSingleThreadedTarget(target);
-    if (target.getCpuArch().isWasm()) {
+    const os_tag = target.getOsTag();
+    // macos C++ exceptions could be compiled, but not being catched,
+    // additional support is required, possibly unwind + DWARF CFI
+    if (target.getCpuArch().isWasm() or os_tag == .macos) {
         exe_cpp.defineCMacro("_LIBCPP_NO_EXCEPTIONS", null);
     }
     exe_cpp.enable_wine = is_wine_enabled;
@@ -47,7 +50,7 @@ pub fn build(b: *Builder) void {
     exe_cpp.enable_wasmtime = is_wasmtime_enabled;
     exe_cpp.enable_darling = is_darling_enabled;
 
-    switch (target.getOsTag()) {
+    switch (os_tag) {
         .windows => {
             // https://github.com/ziglang/zig/issues/8531
             exe_cpp.want_lto = false;
