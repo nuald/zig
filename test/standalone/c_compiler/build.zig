@@ -18,6 +18,7 @@ pub fn build(b: *Builder) void {
     const is_qemu_enabled = b.option(bool, "enable-qemu", "Use QEMU to run cross compiled foreign architecture tests") orelse false;
     const is_wasmtime_enabled = b.option(bool, "enable-wasmtime", "Use Wasmtime to enable and run WASI libstd tests") orelse false;
     const is_darling_enabled = b.option(bool, "enable-darling", "[Experimental] Use Darling to run cross compiled macOS tests") orelse false;
+    const single_threaded = b.option(bool, "single-threaded", "Test single threaded mode") orelse false;
 
     const test_step = b.step("test", "Test the program");
 
@@ -38,7 +39,7 @@ pub fn build(b: *Builder) void {
     exe_cpp.setBuildMode(mode);
     exe_cpp.setTarget(target);
     exe_cpp.linkLibCpp();
-    exe_cpp.single_threaded = isSingleThreadedTarget(target);
+    exe_cpp.single_threaded = isSingleThreadedTarget(target) or single_threaded;
     const os_tag = target.getOsTag();
     // macos C++ exceptions could be compiled, but not being catched,
     // additional support is required, possibly unwind + DWARF CFI

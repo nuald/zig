@@ -126,6 +126,12 @@ pub fn buildLibCXX(comp: *Compilation) !void {
             continue;
         if (std.mem.startsWith(u8, cxx_src, "src/support/ibm/") and target.os.tag != .zos)
             continue;
+        if (comp.bin_file.options.single_threaded) {
+            if (std.mem.startsWith(u8, cxx_src, "src/support/win32/thread_win32.cpp")) {
+                continue;
+            }
+            try cflags.append("-D_LIBCPP_HAS_NO_THREADS");
+        }
 
         try cflags.append("-DNDEBUG");
         try cflags.append("-D_LIBCPP_BUILDING_LIBRARY");
@@ -145,11 +151,6 @@ pub fn buildLibCXX(comp: *Compilation) !void {
         if (target.os.tag == .wasi) {
             // WASI doesn't support exceptions yet.
             try cflags.append("-fno-exceptions");
-        }
-
-        // WASM targets are single threaded.
-        if (comp.bin_file.options.single_threaded) {
-            try cflags.append("-D_LIBCPP_HAS_NO_THREADS");
         }
 
         if (target.os.tag == .zos) {
